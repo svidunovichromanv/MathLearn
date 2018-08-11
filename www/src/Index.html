@@ -14,59 +14,137 @@
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
   <link href="styles.css" rel="stylesheet">
-  <title>Example</title>
+  <script src="https://unpkg.com/mathjs@5.0.4/dist/math.min.js"></script>
+
+  <script src="https://cdn.plot.ly/plotly-1.35.2.min.js"></script>
+
+  <style>
+    input[type=text] {
+      width: 300px;
+    }
+    input {
+      padding: 6px;
+    }
+    body, html, input {
+      font-family: sans-serif;
+      font-size: 11pt;
+
+    }
+    form {
+      margin: 20px 0;
+    }
+  </style>
+  <title>math.js | plot</title>
 </head>
 <body>
-  <header>
-    <hgroup>
-      <h1>
-        Header "h1" from hgroup
-      </h1>
-      <h2>
-        Header "h2" from hgroup
-      </h2>
-    </hgroup>
-  </header>
-  <nav>
-    <menu>
-      <li>
-        <a href="javascript:void(0);">
-          First link from the "nav" block
-        </a>
-      </li>
-      <li>
-        <a href="javascript:void(0);">
-          Second link from the "nav" block
-        </a>
-      </li>
-    </menu>
-  </nav>
-  <section>
-    <article>
-      <h1>
-        Article title from the block "article"
-      </h1>
-      <p>
-        Paragraph text in "article" block
-      </p>
-      <details>
-        <summary>
-          Block "details", tag text of "summary"
-        </summary>
-        <p>
-          Paragraph from "details"
-        </p>
-      </details>
-    </article>
-  </section>
-  <footer>
-    <time>
-      Tag content for "time" from "footer"
-    </time>
-    <p>
-      Paragraph content from "footer"
-    </p>
-  </footer>
-  <script src="scripts.js"></script>
+
+<form id="form">
+  <label for="eq">Enter an equation:</label>
+  <input type="text" id="eq" value="4 * sin(x) + 5 * cos(x/2)" />
+  <input type="submit" value="Draw" />
+</form>
+
+<div id="plot"></div>
+
+<script>
+    class Model{
+        constructor(){
+            this.xValues = null;
+            this.expr = null;
+            this.yValues = null;
+            this.yValuesTemp = null;
+            this.expression = null;
+            this.trace1=null;
+            this.data = null;
+            this.changeCallback = null;
+        }
+        recalculate() {
+            this.expression = "4 * sin(x) + 5 * cos(x/2)";// document.getElementById('eq').value;
+            this.expr = math.compile(this.expression);
+            this.xValues = math.range(-10, 10, 0.1).toArray();
+            this.yValuesTemp = this.xValues.map((x) => {return this.expr.eval({x: x})});
+            this.yValues = this.yValuesTemp.map((y) => {return y<10&&y>-10?y:true});
+            this.trace1 = {
+                x: this.xValues,
+                y: this.yValues,
+                type: 'scatter'
+            };
+            this.data = [this.trace1];
+            if (typeof (this.changeCallback) === 'function'){
+                this.changeCallback();
+            }
+        }
+    }
+    class Controller{
+        constructor(model, view){
+            this.view = view;
+            let self = this;
+            model.changeCallback = function() {
+                self.renderView();
+            };
+            model.recalculate();
+        }
+        renderView() {
+            this.view.plot();
+        }
+    }
+    class View{
+        constructor(model){
+            this.model = model;
+            this.host = document.getElementById('plot');
+        }
+        plot(){
+            Plotly.newPlot(this.host, this.model.data);
+        }
+    }
+    const model = new Model();
+    const controller = new Controller(
+        model,
+        new View(model)
+    );
+    /* const plotContainer = document.getElementById('plot');
+
+
+       let xValues = math.range(-10, 10, 0.1).toArray();//массив значений иксов
+       console.log(xValues,Array.isArray(xValues));
+       function draw() {
+
+               const plotContainer = document.getElementById('plot');//тут область построения
+               const expression = document.getElementById('eq').value;//значение поля для ввода
+               const expr = math.compile(expression);//объект с ф-ией
+               console.log(expr);
+               const yValues = xValues.map((x) => {return expr.eval({x: x})});//массив значений игриков
+               console.log(yValues,Array.isArray(yValues));
+
+
+               const trace1 = {
+                   x: xValues,
+                   y: yValues,
+                   type: 'scatter'
+               };// объект для построения
+
+               let layout = { title:'Click-drag to zoom' };// объект для построения и зумма
+               const data = [trace1];//массив с объектом для построения
+
+
+               Plotly.newPlot(plotContainer, data, layout);//строим график
+               plotContainer.on('plotly_relayout',
+                   function(e){
+                       xValues = math.range(e['xaxis.range[0]'], e['xaxis.range[1]'], 0.1).toArray();
+                       draw();//перерисовка при зуммирование
+                   });
+
+       }
+
+       document.getElementById('form').onsubmit = function (e) {
+           e.preventDefault();//перерисовка при клике на кнопу
+           draw();
+       }
+
+
+       draw();//рисуем при прогрузке*/
+
+</script>
+
 </body>
 </html>
